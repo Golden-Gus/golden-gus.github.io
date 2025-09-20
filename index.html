@@ -1,101 +1,139 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My web-site</title>
+    <title>Змейка - классическая игра</title>
     <style>
         body {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
         }
         #gameContainer {
-        text-align: center;
-        }
-        #gameTitle {
-        margin-bottom: 10px;
+            text-align: center;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
         #gameInfo {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        flex-direction: column;
-        margin-bottom: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            margin-bottom: 10px;
         }
         #gameInfo p {
-        margin: 0;
-        color: red;
-        font-weight: bold;
+            margin: 5px 0;
+            font-weight: bold;
+        }
+        #score {
+            color: #2c3e50;
+        }
+        #gameOver {
+            color: #e74c3c;
         }
         #gameCanvas {
-        border: 1px solid black;
+            border: 2px solid #2c3e50;
+            background-color: #ecf0f1;
         }
         .options {
-        display: flex;
-        flex-direction: row;
-        justify-content: center;
-        align-items: center;
-        margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            margin-top: 15px;
+            gap: 10px;
         }
         .options label,
         .options select,
         .options input[type="checkbox"] {
-        margin-right: 10px;
+            margin-right: 5px;
+        }
+        button {
+            padding: 8px 16px;
+            margin: 5px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        .instructions {
+            margin-top: 15px;
+            color: #7f8c8d;
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
-    <header>
-    <!-- Верхняя часть страницы, например, навигационное меню -->
-    </header>
-    
-    <main>
     <h1>Игра змейка онлайн</h1>
     
-    <audio id="eatSound" volume="0.3">
-    <source src="eat.wav" type="audio/mpeg">
-    Ваш браузер не поддерживает аудио элементы.
+    <audio id="eatSound" volume="0.3" preload="auto">
+        <source src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAAAA" type="audio/wav">
+        Ваш браузер не поддерживает аудио элементы.
     </audio>
     
     <div id="gameContainer">
-    
-    <div id="gameInfo">
-    <p id="score">Очки: 0</p>
-    <p id="gameOver" style="margin-left: 10px;"></p>
+        <div id="gameInfo">
+            <p id="score">Очки: 0</p>
+            <p id="gameOver"></p>
+        </div>
+        <canvas id="gameCanvas" width="400" height="400"></canvas>
+        <div class="options">
+            <label for="speed">Скорость:</label>
+            <select id="speed">
+                <option value="200">Медленно</option>
+                <option value="150" selected>Средне</option>
+                <option value="100">Быстро</option>
+                <option value="50">Очень быстро</option>
+            </select>
+            
+            <input type="checkbox" id="ignoreEdgesCheckbox">
+            <label for="ignoreEdgesCheckbox">Игнорировать границы</label>
+            
+            <input type="checkbox" id="muteSoundCheckbox">
+            <label for="muteSoundCheckbox">Отключить звук</label>
+        </div>
+        
+        <div>
+            <button type="button" id="startButton">Начать игру</button>
+            <button id="pauseButton" disabled>Пауза</button>
+            <button id="restartButton">Перезагрузить</button>
+        </div>
+        
+        <div class="instructions">
+            Управление: стрелки ← ↑ → ↓
+        </div>
     </div>
-    <canvas id="gameCanvas" width="400" height="400"></canvas>
-    <div class="options">
-    <label for="speed">Скорость:</label>
-    <select id="speed" onchange="changeSpeed()">
-    <option value="150">Медленно</option>
-    <option value="100">Средне</option>
-    <option value="70">Быстро</option>
-    </select>
-    <input type="checkbox" id="ignoreEdgesCheckbox" onchange="toggleIgnoreEdges()">
-    <label for="ignoreEdgesCheckbox">Игнорировать границы</label>
-    <input type="checkbox" id="muteSoundCheckbox" onchange="toggleSound()">
-    <label for="muteSoundCheckbox">Отключить звук</label>
-    
-    </div>
-    
-    <br>
-    <button type="button" onclick="startGame()">Начать игру</button>
-    <button onclick="restartGame()">Перезагрузить</button>
-    
-    </div>
-    
-    </main>
-    
-    <footer>
-    <!-- Нижняя часть страницы, например, контактная информация или ссылки -->
-    </footer>
+
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const eatSound = document.getElementById('eatSound');/* Your code... */
+        const eatSound = document.getElementById('eatSound');
+        const scoreElement = document.getElementById('score');
+        const gameOverElement = document.getElementById('gameOver');
+        const startButton = document.getElementById('startButton');
+        const pauseButton = document.getElementById('pauseButton');
+        const restartButton = document.getElementById('restartButton');
+        const speedSelect = document.getElementById('speed');
+        const ignoreEdgesCheckbox = document.getElementById('ignoreEdgesCheckbox');
+        const muteSoundCheckbox = document.getElementById('muteSoundCheckbox');
+        
         const tileSize = 20;
         const tileCount = canvas.width / tileSize;
         
@@ -104,132 +142,321 @@
         let dx = 1;
         let dy = 0;
         let score = 0;
-        let speed = 150; // Slow by default
+        let speed = 150;
         let ignoreEdges = false;
         let gameLoop;
+        let isPaused = false;
+        let gameStarted = false;
+        let nextDx = 1;
+        let nextDy = 0;
+        
+        // Создаем базовый звук, если нет файла eat.wav
+        function createFallbackSound() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.type = 'triangle';
+            oscillator.frequency.value = 523.25; // Нота C5
+            gainNode.gain.value = 0.3;
+            
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.1);
+        }
         
         function playEatSound() {
-        eatSound.currentTime = 0;
-        eatSound.play();
+            if (muteSoundCheckbox.checked) return;
+            
+            try {
+                eatSound.currentTime = 0;
+                eatSound.play().catch(() => {
+                    createFallbackSound();
+                });
+            } catch (e) {
+                createFallbackSound();
+            }
         }
         
         function getRandomInt(min, max) {
-        return Math.floor(Math.random() * (max - min + 1)) + min;
+            return Math.floor(Math.random() * (max - min + 1)) + min;
         }
         
         function createFood() {
-        food.x = getRandomInt(0, tileCount - 1) * tileSize;
-        food.y = getRandomInt(0, tileCount - 1) * tileSize;
+            let newFood;
+            let foodOnSnake;
+            
+            do {
+                foodOnSnake = false;
+                newFood = {
+                    x: getRandomInt(0, tileCount - 1) * tileSize,
+                    y: getRandomInt(0, tileCount - 1) * tileSize
+                };
+                
+                // Проверяем, не находится ли еда на змейке
+                for (let i = 0; i < snake.length; i++) {
+                    if (snake[i].x === newFood.x && snake[i].y === newFood.y) {
+                        foodOnSnake = true;
+                        break;
+                    }
+                }
+            } while (foodOnSnake);
+            
+            food = newFood;
         }
         
         function drawSnake() {
-        snake.forEach((segment, index) => {
-        ctx.fillStyle = index === 0 ? 'purple' : 'green'; // Голова змеи фиолетовая
-        ctx.fillRect(segment.x, segment.y, tileSize, tileSize);
-        });
+            snake.forEach((segment, index) => {
+                ctx.fillStyle = index === 0 ? '#3498db' : '#2ecc71'; // Голова и тело разных цветов
+                ctx.fillRect(segment.x, segment.y, tileSize, tileSize);
+                
+                // Добавляем глаза к голове змеи
+                if (index === 0) {
+                    ctx.fillStyle = 'white';
+                    
+                    // Позиция глаз зависит от направления движения
+                    const eyeSize = tileSize / 5;
+                    const offset = tileSize / 3;
+                    
+                    // Левый глаз
+                    ctx.beginPath();
+                    ctx.arc(
+                        segment.x + offset, 
+                        segment.y + offset, 
+                        eyeSize, 0, Math.PI * 2
+                    );
+                    ctx.fill();
+                    
+                    // Правый глаз
+                    ctx.beginPath();
+                    ctx.arc(
+                        segment.x + tileSize - offset, 
+                        segment.y + offset, 
+                        eyeSize, 0, Math.PI * 2
+                    );
+                    ctx.fill();
+                }
+            });
         }
         
         function drawFood() {
-        ctx.fillStyle = 'red';
-        ctx.fillRect(food.x, food.y, tileSize, tileSize);
+            ctx.fillStyle = '#e74c3c';
+            ctx.beginPath();
+            ctx.arc(
+                food.x + tileSize / 2, 
+                food.y + tileSize / 2, 
+                tileSize / 2, 0, Math.PI * 2
+            );
+            ctx.fill();
+        }
+        
+        function checkCollision() {
+            const head = snake[0];
+            
+            // Проверка столкновения со стенками
+            if (!ignoreEdges) {
+                if (head.x >= canvas.width || head.x < 0 || head.y >= canvas.height || head.y < 0) {
+                    return true;
+                }
+            }
+            
+            // Проверка столкновения с собой (начиная с 4 сегмента)
+            if (snake.length > 4) {
+                for (let i = 4; i < snake.length; i++) {
+                    if (head.x === snake[i].x && head.y === snake[i].y) {
+                        return true;
+                    }
+                }
+            }
+            
+            return false;
         }
         
         function moveSnake() {
-        const head = { x: snake[0].x + dx * tileSize, y: snake[0].y + dy * tileSize };
-        snake.unshift(head);
-        
-        if (head.x === food.x && head.y === food.y) {
-        score++;
-        createFood();
-        playEatSound();
-        } else {
-        snake.pop();
-        }
-        
-        if (ignoreEdges) {
-        if (head.x >= canvas.width) head.x = 0;
-        if (head.x < 0) head.x = canvas.width - tileSize;
-        if (head.y >= canvas.height) head.y = 0;
-        if (head.y < 0) head.y = canvas.height - tileSize;
-        } else {
-        if (head.x >= canvas.width || head.x < 0 || head.y >= canvas.height || head.y < 0) {
-        clearInterval(gameLoop);
-        document.getElementById('gameOver').innerText = 'Игра окончена!';
-        return;
-        }
-        }
-        
+            // Применяем следующее направление
+            dx = nextDx;
+            dy = nextDy;
+            
+            const head = { x: snake[0].x + dx * tileSize, y: snake[0].y + dy * tileSize };
+            
+            // Обработка прохождения через стены
+            if (ignoreEdges) {
+                if (head.x >= canvas.width) head.x = 0;
+                if (head.x < 0) head.x = canvas.width - tileSize;
+                if (head.y >= canvas.height) head.y = 0;
+                if (head.y < 0) head.y = canvas.height - tileSize;
+            }
+            
+            snake.unshift(head);
+            
+            if (head.x === food.x && head.y === food.y) {
+                score++;
+                createFood();
+                playEatSound();
+            } else {
+                snake.pop();
+            }
         }
         
         function clearCanvas() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
         
         function draw() {
-        clearCanvas();
-        drawSnake();
-        drawFood();
-        document.getElementById('score').innerText = 'Очки: ' + score;
+            clearCanvas();
+            drawSnake();
+            drawFood();
+            scoreElement.innerText = 'Очки: ' + score;
         }
         
         function update() {
-        moveSnake();
-        draw();
+            if (isPaused) return;
+            
+            moveSnake();
+            
+            if (checkCollision()) {
+                endGame();
+                return;
+            }
+            
+            draw();
         }
         
         function changeSpeed() {
-        speed = parseInt(document.getElementById('speed').value);
-        clearInterval(gameLoop);
-        gameLoop = setInterval(update, speed);
+            speed = parseInt(speedSelect.value);
+            if (gameStarted && !isPaused) {
+                clearInterval(gameLoop);
+                gameLoop = setInterval(update, speed);
+            }
         }
         
         function toggleIgnoreEdges() {
-        ignoreEdges = document.getElementById('ignoreEdgesCheckbox').checked;
+            ignoreEdges = ignoreEdgesCheckbox.checked;
         }
         
-        function restartGame() {
-        snake = [];
-        dx = 1;
-        dy = 0;
-        score = 0;
-        clearInterval(gameLoop);
-        snake.push({ x: 10 * tileSize, y: 10 * tileSize });
-        createFood();
-        document.getElementById('gameOver').innerText = '';
-        gameLoop = setInterval(update, speed);
+        function toggleSound() {
+            eatSound.muted = muteSoundCheckbox.checked;
         }
         
         function startGame() {
-        snake = [];
-        dx = 1;
-        dy = 0;
-        score = 0;
-        clearInterval(gameLoop);
-        snake.push({ x: 10 * tileSize, y: 10 * tileSize });
-        createFood();
-        document.getElementById('gameOver').innerText = '';
-        gameLoop = setInterval(update, speed);
+            if (gameStarted && !isPaused) return;
+            
+            if (!gameStarted) {
+                snake = [{ x: 10 * tileSize, y: 10 * tileSize }];
+                createFood();
+                gameStarted = true;
+            }
+            
+            isPaused = false;
+            gameOverElement.innerText = '';
+            startButton.disabled = true;
+            pauseButton.disabled = false;
+            speedSelect.disabled = true;
+            ignoreEdgesCheckbox.disabled = true;
+            
+            // Устанавливаем начальное направление
+            dx = 1;
+            dy = 0;
+            nextDx = 1;
+            nextDy = 0;
+            
+            clearInterval(gameLoop);
+            gameLoop = setInterval(update, speed);
+        }
+        
+        function pauseGame() {
+            if (!gameStarted || isPaused) return;
+            
+            isPaused = true;
+            clearInterval(gameLoop);
+            pauseButton.textContent = 'Продолжить';
+            gameOverElement.innerText = 'ПАУЗА';
+        }
+        
+        function resumeGame() {
+            if (!gameStarted || !isPaused) return;
+            
+            isPaused = false;
+            gameLoop = setInterval(update, speed);
+            pauseButton.textContent = 'Пауза';
+            gameOverElement.innerText = '';
+        }
+        
+        function restartGame() {
+            clearInterval(gameLoop);
+            snake = [{ x: 10 * tileSize, y: 10 * tileSize }];
+            dx = 1;
+            dy = 0;
+            nextDx = 1;
+            nextDy = 0;
+            score = 0;
+            isPaused = false;
+            gameStarted = false;
+            gameOverElement.innerText = '';
+            scoreElement.innerText = 'Очки: 0';
+            startButton.disabled = false;
+            pauseButton.disabled = true;
+            pauseButton.textContent = 'Пауза';
+            speedSelect.disabled = false;
+            ignoreEdgesCheckbox.disabled = false;
+            createFood();
+            draw();
+        }
+        
+        function endGame() {
+            clearInterval(gameLoop);
+            gameStarted = false;
+            startButton.disabled = false;
+            pauseButton.disabled = true;
+            speedSelect.disabled = false;
+            ignoreEdgesCheckbox.disabled = false;
+            gameOverElement.innerText = 'Игра окончена! Ваш счёт: ' + score;
         }
         
         document.addEventListener('keydown', (event) => {
-        if (event.key === 'ArrowUp' && dy === 0) {
-        dx = 0;
-        dy = -1;
-        } else if (event.key === 'ArrowDown' && dy === 0) {
-        dx = 0;
-        dy = 1;
-        } else if (event.key === 'ArrowLeft' && dx === 0) {
-        dx = -1;
-        dy = 0;
-        } else if (event.key === 'ArrowRight' && dx === 0) {
-        dx = 1;
-        dy = 0;
-        }
+            if (!gameStarted || isPaused) return;
+            
+            // Предотвращаем разворот на 180 градусов
+            if (event.key === 'ArrowUp' && dy === 0) {
+                nextDx = 0;
+                nextDy = -1;
+            } else if (event.key === 'ArrowDown' && dy === 0) {
+                nextDx = 0;
+                nextDy = 1;
+            } else if (event.key === 'ArrowLeft' && dx === 0) {
+                nextDx = -1;
+                nextDy = 0;
+            } else if (event.key === 'ArrowRight' && dx === 0) {
+                nextDx = 1;
+                nextDy = 0;
+            } else if (event.key === ' ' || event.key === 'Spacebar') {
+                // Пауза на пробел
+                if (isPaused) {
+                    resumeGame();
+                } else {
+                    pauseGame();
+                }
+            }
         });
         
-        function toggleSound() {
-        eatSound.muted = document.getElementById('muteSoundCheckbox').checked;
-        }
+        // Инициализация игры
+        startButton.addEventListener('click', startGame);
+        pauseButton.addEventListener('click', () => {
+            if (isPaused) {
+                resumeGame();
+            } else {
+                pauseGame();
+            }
+        });
+        restartButton.addEventListener('click', restartGame);
+        speedSelect.addEventListener('change', changeSpeed);
+        ignoreEdgesCheckbox.addEventListener('change', toggleIgnoreEdges);
+        muteSoundCheckbox.addEventListener('change', toggleSound);
+        
+        // Первоначальная отрисовка
+        draw();
     </script>
 </body>
 </html>
