@@ -4,8 +4,232 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My web-site</title>
+    <style>
+        body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        }
+        #gameContainer {
+        text-align: center;
+        }
+        #gameTitle {
+        margin-bottom: 10px;
+        }
+        #gameInfo {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        margin-bottom: 10px;
+        }
+        #gameInfo p {
+        margin: 0;
+        color: red;
+        font-weight: bold;
+        }
+        #gameCanvas {
+        border: 1px solid black;
+        }
+        .options {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        margin-top: 10px;
+        }
+        .options label,
+        .options select,
+        .options input[type="checkbox"] {
+        margin-right: 10px;
+        }
+    </style>
 </head>
 <body>
-    <h1>My web-site</h1>
+    <header>
+    <!-- Верхняя часть страницы, например, навигационное меню -->
+    </header>
+    
+    <main>
+    <h1>Игра змейка онлайн</h1>
+    
+    <audio id="eatSound" volume="0.3">
+    <source src="eat.wav" type="audio/mpeg">
+    Ваш браузер не поддерживает аудио элементы.
+    </audio>
+    
+    <div id="gameContainer">
+    
+    <div id="gameInfo">
+    <p id="score">Очки: 0</p>
+    <p id="gameOver" style="margin-left: 10px;"></p>
+    </div>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <div class="options">
+    <label for="speed">Скорость:</label>
+    <select id="speed" onchange="changeSpeed()">
+    <option value="150">Медленно</option>
+    <option value="100">Средне</option>
+    <option value="70">Быстро</option>
+    </select>
+    <input type="checkbox" id="ignoreEdgesCheckbox" onchange="toggleIgnoreEdges()">
+    <label for="ignoreEdgesCheckbox">Игнорировать границы</label>
+    <input type="checkbox" id="muteSoundCheckbox" onchange="toggleSound()">
+    <label for="muteSoundCheckbox">Отключить звук</label>
+    
+    </div>
+    
+    <br>
+    <button type="button" onclick="startGame()">Начать игру</button>
+    <button onclick="restartGame()">Перезагрузить</button>
+    
+    </div>
+    
+    </main>
+    
+    <footer>
+    <!-- Нижняя часть страницы, например, контактная информация или ссылки -->
+    </footer>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const eatSound = document.getElementById('eatSound');/* Your code... */
+        const tileSize = 20;
+        const tileCount = canvas.width / tileSize;
+        
+        let snake = [];
+        let food = { x: 0, y: 0 };
+        let dx = 1;
+        let dy = 0;
+        let score = 0;
+        let speed = 150; // Slow by default
+        let ignoreEdges = false;
+        let gameLoop;
+        
+        function playEatSound() {
+        eatSound.currentTime = 0;
+        eatSound.play();
+        }
+        
+        function getRandomInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+        
+        function createFood() {
+        food.x = getRandomInt(0, tileCount - 1) * tileSize;
+        food.y = getRandomInt(0, tileCount - 1) * tileSize;
+        }
+        
+        function drawSnake() {
+        snake.forEach((segment, index) => {
+        ctx.fillStyle = index === 0 ? 'purple' : 'green'; // Голова змеи фиолетовая
+        ctx.fillRect(segment.x, segment.y, tileSize, tileSize);
+        });
+        }
+        
+        function drawFood() {
+        ctx.fillStyle = 'red';
+        ctx.fillRect(food.x, food.y, tileSize, tileSize);
+        }
+        
+        function moveSnake() {
+        const head = { x: snake[0].x + dx * tileSize, y: snake[0].y + dy * tileSize };
+        snake.unshift(head);
+        
+        if (head.x === food.x && head.y === food.y) {
+        score++;
+        createFood();
+        playEatSound();
+        } else {
+        snake.pop();
+        }
+        
+        if (ignoreEdges) {
+        if (head.x >= canvas.width) head.x = 0;
+        if (head.x < 0) head.x = canvas.width - tileSize;
+        if (head.y >= canvas.height) head.y = 0;
+        if (head.y < 0) head.y = canvas.height - tileSize;
+        } else {
+        if (head.x >= canvas.width || head.x < 0 || head.y >= canvas.height || head.y < 0) {
+        clearInterval(gameLoop);
+        document.getElementById('gameOver').innerText = 'Игра окончена!';
+        return;
+        }
+        }
+        
+        }
+        
+        function clearCanvas() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+        
+        function draw() {
+        clearCanvas();
+        drawSnake();
+        drawFood();
+        document.getElementById('score').innerText = 'Очки: ' + score;
+        }
+        
+        function update() {
+        moveSnake();
+        draw();
+        }
+        
+        function changeSpeed() {
+        speed = parseInt(document.getElementById('speed').value);
+        clearInterval(gameLoop);
+        gameLoop = setInterval(update, speed);
+        }
+        
+        function toggleIgnoreEdges() {
+        ignoreEdges = document.getElementById('ignoreEdgesCheckbox').checked;
+        }
+        
+        function restartGame() {
+        snake = [];
+        dx = 1;
+        dy = 0;
+        score = 0;
+        clearInterval(gameLoop);
+        snake.push({ x: 10 * tileSize, y: 10 * tileSize });
+        createFood();
+        document.getElementById('gameOver').innerText = '';
+        gameLoop = setInterval(update, speed);
+        }
+        
+        function startGame() {
+        snake = [];
+        dx = 1;
+        dy = 0;
+        score = 0;
+        clearInterval(gameLoop);
+        snake.push({ x: 10 * tileSize, y: 10 * tileSize });
+        createFood();
+        document.getElementById('gameOver').innerText = '';
+        gameLoop = setInterval(update, speed);
+        }
+        
+        document.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowUp' && dy === 0) {
+        dx = 0;
+        dy = -1;
+        } else if (event.key === 'ArrowDown' && dy === 0) {
+        dx = 0;
+        dy = 1;
+        } else if (event.key === 'ArrowLeft' && dx === 0) {
+        dx = -1;
+        dy = 0;
+        } else if (event.key === 'ArrowRight' && dx === 0) {
+        dx = 1;
+        dy = 0;
+        }
+        });
+        
+        function toggleSound() {
+        eatSound.muted = document.getElementById('muteSoundCheckbox').checked;
+        }
+    </script>
 </body>
 </html>
